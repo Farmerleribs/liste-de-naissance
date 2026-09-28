@@ -189,9 +189,15 @@ body{font-family:Karla,system-ui,sans-serif;color:var(--encre);background:var(--
 .ov{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(51,67,79,.42);backdrop-filter:blur(3px)}
 .ov.open{display:flex}
 .winwrap{position:relative;width:100%;max-width:430px}
-.win{position:relative;width:100%;background:var(--creme);padding:clamp(46px,6vw,58px) clamp(44px,6vw,62px) clamp(40px,5vw,50px);text-align:center;box-shadow:0 40px 80px -40px rgba(51,67,79,.9);animation:winIn .5s cubic-bezier(.2,.75,.2,1) both;max-height:92svh;overflow-y:auto}
+.winwrap.wide{max-width:700px}
+.win{position:relative;width:100%;background:var(--creme);padding:clamp(36px,5vw,50px) clamp(36px,5vw,56px) clamp(32px,4vw,44px);text-align:center;box-shadow:0 40px 80px -40px rgba(51,67,79,.9);animation:winIn .5s cubic-bezier(.2,.75,.2,1) both;max-height:92svh;overflow-y:auto}
 @keyframes winIn{from{opacity:0;transform:scale(.94) translateY(14px)}to{opacity:1;transform:none}}
-.win.d1{border-radius:62% 38% 55% 45% / 42% 58% 42% 58%}
+.win.d1{border-radius:28px}
+.win.d1.wide{border-radius:28px;text-align:left}
+.win.d1.wide h3{text-align:center;margin-bottom:16px}
+.win2col{display:grid;grid-template-columns:1fr 1fr;gap:0 22px}
+@media(max-width:600px){.win2col{grid-template-columns:1fr}.winwrap.wide{max-width:430px}}
+.win2col .fld-full{grid-column:1/-1}
 .win.d2{border-radius:62% 38% 55% 45% / 42% 58% 42% 58%;animation:winIn .5s cubic-bezier(.2,.75,.2,1) both, morphWin 14s 1s ease-in-out infinite}
 @keyframes morphWin{
   0%,100%{border-radius:62% 38% 55% 45% / 42% 58% 42% 58%}
@@ -665,7 +671,7 @@ function compteur(){
 
 /* ---------- fenêtres ---------- */
 var ov=$("#ov"),host=$("#winHost");
-function open(html){host.innerHTML='<div class="winwrap"><button class="close" data-close aria-label="Fermer">&times;</button>'+html+'</div>';ov.classList.add("open");document.body.style.overflow="hidden";}
+function open(html,wide){var w=wide?'<div class="winwrap wide">':'<div class="winwrap">';host.innerHTML=w+'<button class="close" data-close aria-label="Fermer">&times;</button>'+html+'</div>';ov.classList.add("open");document.body.style.overflow="hidden";}
 function close(){ov.classList.remove("open");host.innerHTML="";if(!padmOuvert())document.body.style.overflow="";}
 ov.addEventListener("click",function(e){if(e.target===ov)close();});
 document.addEventListener("keydown",function(e){if(e.key==="Escape")close();});
@@ -995,16 +1001,18 @@ function renommer(g){
   };
 }
 function editer(g){
-  open('<div class="win d1"><h3>Modifier</h3>'+
+  open('<div class="win d1 wide"><h3>Modifier</h3>'+
+    '<div class="win2col">'+
     '<div class="fld"><label>Nom</label><input id="en" value="'+esc(g.name||"")+'"></div>'+
     '<div class="fld"><label>Prix</label><input id="ep" value="'+esc(g.price||"")+'"></div>'+
     '<div class="fld"><label>Catégorie</label><select id="ec">'+
       CATS.map(function(c){return '<option'+(c===g.category?' selected':'')+'>'+esc(c)+'</option>';}).join("")+
     '</select></div>'+
-    '<div class="fld"><label>Lien du commerçant</label><input id="eu" value="'+esc(g.url||"")+'" placeholder="https://…"></div>'+
-  '<div class="fld"><label>Déjà financé (€)</label><input id="efu" inputmode="decimal" value="'+(euros(g.funded)||"")+'" placeholder="0"></div>'+
+    '<div class="fld"><label>Déjà financé (€)</label><input id="efu" inputmode="decimal" value="'+(euros(g.funded)||"")+'" placeholder="0"></div>'+
+    '<div class="fld fld-full"><label>Lien du commerçant</label><input id="eu" value="'+esc(g.url||"")+'" placeholder="https://…"></div>'+
+    '</div>'+
     '<button class="btn p" id="eok">Enregistrer</button><button class="btn o" data-close>Annuler</button>'+
-    '<div class="err" id="ee"></div></div>');
+    '<div class="err" id="ee"></div></div>',true);
   $("#eok").onclick=function(){
     var n=($("#en").value||"").trim();if(!n){$("#ee").textContent="Le nom est obligatoire.";return;}
     this.disabled=true;
@@ -1073,22 +1081,25 @@ function photo(g){
 }
 
 $("#addBtn").onclick=function(){
-  open('<div class="win d1"><h3>Ajouter un cadeau</h3>'+
-    '<div class="fld"><label>Lien du produit</label><input id="au" placeholder="https://…"></div>'+
-    '<button class="btn o" id="afetch">Récupérer la photo et le nom</button>'+
-    '<div class="ph2" id="aprev" style="margin:14px auto 0"><svg preserveAspectRatio="xMidYMid slice"><rect width="100%" height="100%" fill="url(#BPs)"/></svg></div>'+
-    '<div class="fld"><label>Adresse de l\'image</label><input id="ai" placeholder="https://…"></div>'+
+  open('<div class="win d1 wide"><h3>Ajouter un cadeau</h3>'+
+    '<div class="fld fld-full" style="grid-column:1/-1"><label>Lien du produit (coller pour récupérer automatiquement)</label>'+
+    '<div style="display:flex;gap:8px"><input id="au" placeholder="https://…" style="flex:1"><button class="btn o" id="afetch" style="width:auto;white-space:nowrap;padding:11px 16px;margin:0">Récupérer</button></div></div>'+
+    '<div class="win2col" style="margin-top:4px">'+
+    '<div style="display:flex;align-items:center;justify-content:center;grid-row:span 3">'+
+    '<div class="ph2" id="aprev" style="width:110px;height:110px;margin:0"><svg preserveAspectRatio="xMidYMid slice"><rect width="100%" height="100%" fill="url(#BPs)"/></svg></div></div>'+
     '<div class="fld"><label>Nom</label><input id="an" placeholder="Gigoteuse en coton"></div>'+
     '<div class="fld"><label>Prix</label><input id="ap" placeholder="39 €"></div>'+
     '<div class="fld"><label>Catégorie</label><select id="ac">'+
       CATS.map(function(c){return '<option>'+esc(c)+'</option>';}).join("")+'</select></div>'+
+    '<div class="fld"><label>Adresse de l\'image</label><input id="ai" placeholder="https://…"></div>'+
     '<div class="fld"><label>Emoji (si pas de photo)</label><input id="ae" placeholder="🎁"></div>'+
-    '<div class="fld"><label>Cadrage de la photo</label><select id="af">'+
+    '<div class="fld"><label>Cadrage photo</label><select id="af">'+
       '<option value="contain">Photo entière</option><option value="cover">Remplir le cadre</option></select></div>'+
-    '<div class="fld"><label><input type="checkbox" id="apb" style="width:auto;box-shadow:none;margin-right:7px">Nous l\'avons déjà acheté</label></div>'+
+    '<div class="fld"><label><input type="checkbox" id="apb" style="width:auto;box-shadow:none;margin-right:7px">Déjà acheté par nous</label></div>'+
+    '</div>'+
     '<button class="btn p" id="aok">Ajouter le cadeau</button>'+
     '<button class="btn o" data-close>Annuler</button>'+
-    '<div class="err" id="ae2"></div></div>');
+    '<div class="err" id="ae2"></div></div>',true);
   $("#afetch").onclick=function(){
     var u=($("#au").value||"").trim();
     if(!u){$("#ae2").textContent="Collez d'abord un lien.";return;}
@@ -1117,7 +1128,8 @@ $("#addBtn").onclick=function(){
 
 $("#cfgBtn").onclick=function(){
   function f(id,lab,val,ph){return '<div class="fld"><label>'+lab+'</label><input id="'+id+'" value="'+esc(val||"")+'"'+(ph?' placeholder="'+ph+'"':'')+'></div>';}
-  open('<div class="win d1"><h3>Réglages</h3>'+
+  open('<div class="win d1 wide"><h3>Réglages</h3>'+
+    '<div class="win2col">'+
     f("kwe","Wero (mobile, e-mail ou lien)",CFG.wero)+
     f("kca","Lien de la cagnotte",CFG.cagnotte_url,"https://www.onparticipe.fr/…")+
     f("kbe","Bénéficiaire",CFG.beneficiary)+
@@ -1125,12 +1137,13 @@ $("#cfgBtn").onclick=function(){
     f("kwt","Titre du mot",CFG.word_title)+
     f("khs","Sous-titre de l\'accueil",CFG.hero_sub)+
     f("kme","Formule d\'accueil",CFG.merci)+
-    '<div class="fld"><label>Le mot — une ligne par paragraphe · ## titre · - puce · &gt; note · **gras**</label><textarea id="kms" rows="12">'+esc(CFG.message||"")+'</textarea></div>'+
-    CATS.map(function(c,ci){return '<div class="fld"><label>Note affichée sur « '+esc(c)+' »</label><textarea class="knote" data-cat="'+esc(c)+'" rows="4">'+esc((CFG.notes&&CFG.notes[c])||"")+'</textarea></div>';}).join("")+
-  '<div class="fld"><label>Nouveau code (vide = inchangé)</label><input id="knc" type="password" autocomplete="new-password"></div>'+
+    '<div class="fld"><label>Nouveau code d\'accès (vide = inchangé)</label><input id="knc" type="password" autocomplete="new-password"></div>'+
+    '</div>'+
+    '<div class="fld"><label>Le mot — une ligne par paragraphe · ## titre · - puce · &gt; note · **gras**</label><textarea id="kms" rows="10">'+esc(CFG.message||"")+'</textarea></div>'+
+    CATS.map(function(c){return '<div class="fld"><label>Note sur « '+esc(c)+' »</label><textarea class="knote" data-cat="'+esc(c)+'" rows="3">'+esc((CFG.notes&&CFG.notes[c])||"")+'</textarea></div>';}).join("")+
     '<button class="btn p" id="kok">Enregistrer les réglages</button>'+
     '<button class="btn o" data-close>Annuler</button>'+
-    '<div class="err" id="ker"></div></div>');
+    '<div class="err" id="ker"></div></div>',true);
   $("#kok").onclick=function(){
     var self=this;self.disabled=true;self.textContent="Enregistrement…";
     var nc=($("#knc").value||"").trim();
@@ -1170,16 +1183,18 @@ $("#wipeBtn").onclick=function(){
 $("#msgBtn").onclick=function(){
   api("messages",{code:CODE}).then(function(j){
     var l=(j.messages||[]);
-    open('<div class="win d1"><h3>Messages</h3>'+
-      '<div class="tx">'+l.length+' entrée(s).</div>'+
-      '<div style="text-align:left;max-height:52svh;overflow-y:auto;margin-top:12px">'+
+    open('<div class="win d1 wide"><h3>Messages</h3>'+
+      '<div class="tx" style="text-align:center">'+l.length+' entrée(s)</div>'+
+      '<div style="text-align:left;max-height:62svh;overflow-y:auto;margin-top:14px">'+
       (l.map(function(m){
-        return '<div class="mrow"><div class="who">'+esc(m.name||"Anonyme")+
-          (m.amount?' · '+esc(m.amount):'')+'</div>'+
-          (m.message?'<div>'+esc(m.message)+'</div>':'')+
-          '<div class="when">'+esc(m.action||"")+' · '+esc(String(m.created_at||"").slice(0,10))+'</div></div>';
-      }).join("")||'<div class="tx">Aucun message pour le moment.</div>')+
-      '</div><button class="btn o" data-close>Fermer</button></div>');
+        return '<div class="mrow"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">'+
+          '<span class="who">'+esc(m.name||"Anonyme")+(m.amount?' · <strong>'+esc(m.amount)+'</strong>':'')+'</span>'+
+          '<span class="when">'+esc(String(m.created_at||"").slice(0,10))+'</span></div>'+
+          '<div class="when" style="margin-top:1px">'+esc(m.action||"")+'</div>'+
+          (m.message?'<div style="margin-top:5px;font-size:13px;color:var(--encre)">'+esc(m.message)+'</div>':'')+
+          '</div>';
+      }).join("")||'<div class="tx" style="text-align:center">Aucun message pour le moment.</div>')+
+      '</div><button class="btn o" data-close style="margin-top:16px">Fermer</button></div>',true);
   }).catch(function(){});
 };
 
