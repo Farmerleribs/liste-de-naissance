@@ -17,7 +17,17 @@ const supa = createClient(
   { auth: { persistSession: false } },
 );
 
-const JWT_SECRET = Deno.env.get("JWT_SECRET") || "liste-naissance-secret-change-me";
+const JWT_SECRET     = Deno.env.get("JWT_SECRET") || "liste-naissance-secret-change-me";
+// BYPASS_DOMAIN : si défini, les e-mails se terminant par @<BYPASS_DOMAIN>
+// contournent la validation de format et ne reçoivent pas de notifications.
+// Exemple : "test.local"  → test@test.local est accepté.
+// Laisser vide (absent) en production.
+const BYPASS_DOMAIN  = (Deno.env.get("BYPASS_DOMAIN") || "").trim().toLowerCase();
+
+function isBypass(email: string): boolean {
+  if (!BYPASS_DOMAIN) return false;
+  return email.endsWith("@" + BYPASS_DOMAIN);
+}
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -112,13 +122,14 @@ async function scrape(u: string): Promise<{ image: string; title: string }> {
 }
 
 // to : destinataire explicite (e-mail du propriétaire de la liste).
-// Si absent, repli sur la variable d'environnement NOTIFY_EMAIL (liste legacy).
+// Si absent, repli sur NOTIFY_EMAIL (liste legacy).
+// Si le destinataire est un e-mail bypass (domaine test), la notification est silencieuse.
 async function notify(subject: string, lines: string[], to?: string): Promise<void> {
-  const key     = Deno.env.get("RESEND_API_KEY") || "";
+  const key      = Deno.env.get("RESEND_API_KEY") || "";
   const fallback = Deno.env.get("NOTIFY_EMAIL") || "";
-  const dest    = to || fallback;
-  const from    = Deno.env.get("NOTIFY_FROM") || "Liste de naissance <onboarding@resend.dev>";
-  if (!key || !dest) return;
+  const dest     = to || fallback;
+  const from     = Deno.env.get("NOTIFY_FROM") || "Liste de naissance <onboarding@resend.dev>";
+  if (!key || !dest || isBypass(dest)) return;          // silencieux pour les comptes test
   try {
     await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -248,7 +259,9 @@ Deno.serve(async (req) => {
 
       if (!email || !password || !prenom1 || !prenom2)
         return json({ error: "missing_fields" }, 400);
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      // Les adresses bypass (@BYPASS_DOMAIN) ne doivent pas passer la validation
+      // de format stricte mais doivent quand même contenir un @.
+      if (!isBypass(email) && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
         return json({ error: "invalid_email" }, 400);
       if (password.length < 6)
         return json({ error: "password_too_short" }, 400);
