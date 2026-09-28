@@ -496,8 +496,17 @@ var reduce=window.matchMedia("(prefers-reduced-motion:reduce)").matches;
 var ADRESSE="";
 var G=[],CFG={},CODE="",CATS=[],FILTRE="",FADM="tous";
 
-// Slug extrait de l'URL : /l/marie-thomas → "marie-thomas"
-var SLUG=(function(){var p=window.location.pathname.replace(/\/+$/,"").split("/");return p[p.length-1]||"";}());
+// Slug extrait de l'URL.
+// Priorité 1 : query string ?s=marie-thomas  (GitHub Pages, pas de sous-chemins dynamiques)
+// Priorité 2 : dernier segment du pathname   (serveur supportant les URLs propres, futur)
+var SLUG=(function(){
+  var qs=new URLSearchParams(window.location.search).get("s")||"";
+  if(qs)return qs;
+  var p=window.location.pathname.replace(/\/+$/,"").split("/");
+  var last=p[p.length-1]||"";
+  // Ignorer "index.html" et "l" (pas des slugs)
+  return (last&&last!=="index.html"&&last!=="l")?last:"";
+}());
 // Token JWT (espace parents multi-user)
 var JWT=localStorage.getItem("ln_token_"+SLUG)||"";
 

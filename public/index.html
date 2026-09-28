@@ -56,6 +56,8 @@ body{font-family:Karla,system-ui,sans-serif;color:var(--encre);background:var(--
 
 /* ── ARCHE ── */
 .arche{background:var(--creme);border-radius:clamp(30px,6vw,54px) clamp(30px,6vw,54px) 0 0;margin-top:-42px;padding:clamp(40px,6vw,70px) clamp(20px,4vw,40px)}
+/* centrage du wrapper carte + espace pour .gcd qui déborde en bas */
+.heroin>div{display:flex;flex-direction:column;align-items:center;padding-bottom:48px}
 
 /* ── FEATURES ── */
 .feat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px;max-width:820px;margin:0 auto 60px}
@@ -269,7 +271,7 @@ function showInscription(){
     '<p class="lien-cnx">Déjà un compte ? <a id="goLogin">Se connecter</a></p>'+
   '</div>');
 
-  var base=window.location.origin+window.location.pathname.replace(/\/+$/,"")+"/l/";
+  var base=window.location.origin+window.location.pathname.replace(/\/+$/,"")+"/l/?s=";
   function maj(){
     var s=makeSlugPreview($("#rp1").value||"",$("#rp2").value||"");
     var el=document.querySelector("#rurlprev strong");
@@ -342,7 +344,7 @@ function showDesign(p1,p2,td,em,pw){
         }).then(function(){
           localStorage.setItem("ln_token_"+j.slug,j.token);
           localStorage.setItem("ln_new_"+j.slug,"1");
-          window.location.href="./l/"+j.slug;
+          window.location.href="./l/?s="+encodeURIComponent(j.slug);
         });
       });
     }).catch(function(){document.getElementById("derr").textContent="Erreur réseau. Réessayez.";self.disabled=false;self.textContent="Créer ma liste →";});
@@ -369,7 +371,7 @@ function showConnexion(){
     }).then(function(r){return r.json();}).then(function(j){
       if(!j.ok){document.getElementById("lerr").textContent="Identifiants incorrects.";self.disabled=false;self.textContent="Se connecter";return;}
       localStorage.setItem("ln_token_"+j.slug,j.token);
-      window.location.href="./l/"+j.slug;
+      window.location.href="./l/?s="+encodeURIComponent(j.slug);
     }).catch(function(){document.getElementById("lerr").textContent="Erreur réseau.";self.disabled=false;self.textContent="Se connecter";});
   };
 }
