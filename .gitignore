@@ -1,0 +1,8 @@
+.env
+.env.*
+!.env.example
+.DS_Store
+node_modules/
+supabase/.temp/
+supabase/data/*.sql
+!supabase/data/.gitkeep
