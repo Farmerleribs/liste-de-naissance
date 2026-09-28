@@ -42,7 +42,8 @@ fi
 # --- Racine du projet ---------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-HTML="$ROOT/public/index.html"
+HTML_HOME="$ROOT/public/index.html"   # page plateforme
+HTML="$ROOT/public/l/index.html"      # page liste — contient les 14 marqueurs fonctionnels
 
 echo ""
 echo "======================================================================="
@@ -52,35 +53,32 @@ echo "======================================================================="
 echo ""
 
 # =============================================================================
-#  1. Présence du fichier
+#  1. Présence des fichiers
 # =============================================================================
-echo "--- 1. Fichier public/index.html ---"
-if [[ -f "$HTML" ]]; then
-  SIZE="$(wc -c < "$HTML")"
-  ok "Fichier présent (${SIZE} octets)"
+echo "--- 1. Fichiers HTML ---"
+if [[ -f "$HTML_HOME" ]]; then
+  SIZE="$(wc -c < "$HTML_HOME")"
+  ok "public/index.html présent (${SIZE} octets)"
 else
   fail "public/index.html introuvable"
+fi
+if [[ -f "$HTML" ]]; then
+  SIZE="$(wc -c < "$HTML")"
+  ok "public/l/index.html présent (${SIZE} octets)"
+else
+  fail "public/l/index.html introuvable"
   echo ""
   echo "Erreurs totales : $ERRORS"
   exit 1
 fi
 
 # =============================================================================
-#  2. Empreinte SHA-256
+#  2. Empreinte SHA-256 (public/l/index.html — informatif, ne bloque pas)
 # =============================================================================
 echo ""
-echo "--- 2. Empreinte SHA-256 ---"
-EXPECTED_ORIG="da216eefc78a21fe6011fed154edb547754754a26463917c1479afcc50a28571"
+echo "--- 2. Empreinte SHA-256 (public/l/index.html) ---"
 ACTUAL="$(shasum -a 256 "$HTML" | awk '{print $1}')"
-
-if [[ "$ACTUAL" == "$EXPECTED_ORIG" ]]; then
-  ok "Empreinte originale (fichier non encore modifié)"
-  info "SHA-256 : $ACTUAL"
-else
-  warn "L'empreinte diffère de l'original — normal si l'URL d'API et/ou l'adresse ont été patchées."
-  info "  Original  : $EXPECTED_ORIG"
-  info "  Actuel    : $ACTUAL"
-fi
+warn "SHA-256 de public/l/index.html : $ACTUAL (référence informative — modifié légitimement)"
 
 # =============================================================================
 #  3. Inventaire des marqueurs fonctionnels
@@ -160,27 +158,26 @@ else
 fi
 
 # =============================================================================
-#  5. Absence de secrets dans le fichier déployé
+#  5. Absence de secrets dans les fichiers déployés
 # =============================================================================
 echo ""
 echo "--- 5. Absence de données sensibles dans le front ---"
 
-# Vérifier que l'adresse postale d'origine a bien été retirée
-ADRESSE_ORIG="Asnières-sur-Seine"
-if grep -q "$ADRESSE_ORIG" "$HTML" 2>/dev/null; then
-  fail "L'adresse postale originale est encore présente dans public/index.html"
-  fail "→ Appliquer le patch Étape 3 avant tout push public"
-else
-  ok "Adresse postale originale absente"
-fi
-
-# Vérifier que le parent_code par défaut connu n'est pas en clair dans le front
-# (il est dans schema.sql, mais on vérifie le HTML aussi par précaution)
-if grep -q "var ADRESSE=\"2 rue de Verdun" "$HTML" 2>/dev/null; then
-  fail "var ADRESSE contient encore l'adresse réelle"
-else
-  ok "var ADRESSE : adresse réelle absente"
-fi
+# Vérifier les deux fichiers HTML
+for F in "$HTML_HOME" "$HTML"; do
+  FNAME="$(basename "$(dirname "$F")")/$(basename "$F")"
+  ADRESSE_ORIG="Asnières-sur-Seine"
+  if grep -q "$ADRESSE_ORIG" "$F" 2>/dev/null; then
+    fail "Adresse postale originale présente dans $FNAME → purger avant push"
+  else
+    ok "$FNAME : adresse postale absente"
+  fi
+  if grep -q "var ADRESSE=\"2 rue de Verdun" "$F" 2>/dev/null; then
+    fail "$FNAME : var ADRESSE contient l'adresse réelle"
+  else
+    ok "$FNAME : var ADRESSE vide ou absente"
+  fi
+done
 
 # =============================================================================
 #  6. Présence du workflow GitHub Actions
@@ -207,21 +204,22 @@ else
 fi
 
 # =============================================================================
-#  7. Vérification que l'URL d'API a été mise à jour
+#  7. Vérification que l'URL d'API a été mise à jour (dans les deux fichiers)
 # =============================================================================
 echo ""
 echo "--- 7. URL d'API dans le front ---"
 
 PROD_URL="wcdokfrjgivmdisafzio.supabase.co"
-if grep -q "$PROD_URL" "$HTML" 2>/dev/null; then
-  warn "L'URL d'API pointe encore vers la production (wcdokfrjgivmdisafzio)"
-  warn "→ Appliquer le patch Étape 4 avant tout push public"
-else
-  ok "URL d'API : ne pointe plus vers wcdokfrjgivmdisafzio (production)"
-  # Afficher l'URL actuellement configurée
-  API_LINE="$(grep 'var API=' "$HTML" | head -1)"
-  info "URL actuelle : $API_LINE"
-fi
+for F in "$HTML_HOME" "$HTML"; do
+  FNAME="$(basename "$(dirname "$F")")/$(basename "$F")"
+  if grep -q "$PROD_URL" "$F" 2>/dev/null; then
+    warn "$FNAME : URL d'API pointe encore vers wcdokfrjgivmdisafzio (production)"
+  else
+    ok "$FNAME : URL d'API mise à jour"
+    API_LINE="$(grep 'var API=' "$F" | head -1)"
+    info "  → $API_LINE"
+  fi
+done
 
 # =============================================================================
 #  Bilan
