@@ -29,17 +29,30 @@ body{font-family:Karla,system-ui,sans-serif;color:var(--encre);background:var(--
 .nav .logo{font-family:Prata,serif;font-size:clamp(15px,1.9vw,18px)}
 .nav .ncta{background:var(--encre);color:var(--creme);border:none;font:inherit;font-size:12.5px;font-weight:500;padding:9px 20px;border-radius:999px;cursor:pointer;transition:background var(--t)}
 .nav .ncta:hover{background:#41535f}
-.heroin{position:relative;z-index:5;min-height:min(60svh,400px);display:flex;align-items:center;justify-content:center;padding:38px 0 24px;text-align:center}
-.heroin .inner{max-width:520px;padding:0 16px}
-.eyeb{font-size:10px;letter-spacing:.26em;text-transform:uppercase;opacity:.6;margin-bottom:14px}
-.htitle{font-family:Prata,serif;font-size:clamp(26px,5vw,42px);line-height:1.1;margin-bottom:14px}
-.htitle em{color:var(--miel-txt);font-style:normal}
-.hsub{font-size:14px;color:var(--encre-2);line-height:1.65;margin-bottom:28px}
-.hctas{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.heroin{position:relative;z-index:5;min-height:min(62svh,420px);display:flex;align-items:center;justify-content:center;padding:38px 0 24px}
+/* ── carte hero animée ── */
+.gcard{position:relative;width:100%;max-width:430px}
+.gmain{background:rgba(246,242,231,.94);border-radius:var(--g2);padding:clamp(34px,5vw,48px) clamp(28px,4.4vw,46px) clamp(38px,5.4vw,52px);text-align:center;will-change:transform}
+.eyeb{font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;opacity:.66;margin-bottom:13px}
+.nmx{font-family:Prata,serif;font-size:clamp(28px,5.4vw,42px);line-height:1.05}
+.mcx{font-family:Prata,serif;font-size:clamp(16px,2.4vw,19px);color:var(--miel-txt);margin-top:12px}
+.gcd{position:absolute;right:-6px;bottom:-34px;background:var(--miel);border-radius:var(--g4);padding:17px 24px 19px;text-align:center;box-shadow:0 20px 38px -22px rgba(51,67,79,.85);will-change:transform}
+.gcd .n2{font-family:Prata,serif;font-size:30px;color:#4A3A0C;line-height:1}
+.gcd .l2{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#4A3A0C;margin-top:4px;line-height:1.45}
+/* ── CTA sous la carte ── */
+.hctas{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:52px;position:relative;z-index:5}
 .btn-main{background:var(--encre);color:var(--creme);border:none;font:inherit;font-size:13.5px;font-weight:600;padding:14px 32px;border-radius:999px;cursor:pointer;transition:background var(--t)}
 .btn-main:hover{background:#41535f}
 .btn-sec{background:rgba(255,255,255,.55);color:var(--encre);border:none;font:inherit;font-size:13.5px;font-weight:500;padding:14px 26px;border-radius:999px;cursor:pointer;transition:background var(--t)}
 .btn-sec:hover{background:rgba(255,255,255,.8)}
+/* ── animations ── */
+.bloomA{animation:bloom 1s cubic-bezier(.25,.9,.3,1) both}
+.bloomB{animation:bloom .9s .22s cubic-bezier(.25,.9,.3,1) both}
+.fadeA{animation:fadeUp .65s .34s both}
+.fadeB{animation:fadeUp .65s .48s both}
+.fadeC{animation:fadeUp .65s .62s both}
+@keyframes bloom{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 
 /* ── ARCHE ── */
 .arche{background:var(--creme);border-radius:clamp(30px,6vw,54px) clamp(30px,6vw,54px) 0 0;margin-top:-42px;padding:clamp(40px,6vw,70px) clamp(20px,4vw,40px)}
@@ -130,11 +143,19 @@ body{font-family:Karla,system-ui,sans-serif;color:var(--encre);background:var(--
       <button class="ncta" id="navInscription">Créer ma liste</button>
     </nav>
     <div class="heroin">
-      <div class="inner">
-        <div class="eyeb">Une liste, une histoire</div>
-        <h1 class="htitle">Créez votre liste de naissance<br><em>en quelques minutes</em></h1>
-        <p class="hsub">Un site élégant et personnalisé,<br>que vous partagez à vos proches par un simple lien.</p>
-        <div class="hctas">
+      <div>
+        <div class="gcard">
+          <div class="gmain bloomA" id="gm">
+            <div class="eyeb fadeA" id="hEyeb">dans quelques mois</div>
+            <div class="nmx">Liste de naissance</div>
+            <div class="mcx fadeB">Créez la vôtre en quelques minutes</div>
+          </div>
+          <div class="gcd bloomB" id="gc">
+            <div class="n2" id="hCd">—</div>
+            <div class="l2">jours avant<br>la date estimée</div>
+          </div>
+        </div>
+        <div class="hctas fadeC">
           <button class="btn-main" id="heroInscription">✦ Créer ma liste gratuitement</button>
           <button class="btn-sec" id="heroConnexion">Déjà un compte →</button>
         </div>
@@ -357,6 +378,42 @@ function showConnexion(){
 document.getElementById("navInscription").onclick=showInscription;
 document.getElementById("heroInscription").onclick=showInscription;
 document.getElementById("heroConnexion").onclick=showConnexion;
+
+// ── Compteur hero (date fictive : dans ~9 mois) ───────────────────────────────
+(function(){
+  var cd=document.getElementById("hCd");
+  var ey=document.getElementById("hEyeb");
+  if(!cd)return;
+  // Date de démonstration : 9 mois à partir d'aujourd'hui
+  var ref=new Date();ref.setMonth(ref.getMonth()+9);
+  var n=Math.max(0,Math.ceil((ref-new Date())/86400000));
+  cd.textContent=n;
+  var mois=["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+  if(ey)ey.textContent=(mois[ref.getMonth()]+" "+ref.getFullYear()).replace(/^./,function(c){return c.toUpperCase();});
+})();
+
+// ── Parallaxe hero ────────────────────────────────────────────────────────────
+(function(){
+  var reduce=window.matchMedia("(prefers-reduced-motion:reduce)").matches;
+  if(reduce)return;
+  var bgp=document.getElementById("bgp");
+  var gm=document.getElementById("gm");
+  var gc=document.getElementById("gc");
+  function onScroll(){
+    var y=window.scrollY;
+    if(bgp)bgp.style.transform="translateY("+(y*.16)+"px)";
+    if(gm)gm.style.transform="translateY("+(y*-.05)+"px)";
+    if(gc)gc.style.transform="translateY("+(y*-.09)+"px)";
+  }
+  window.addEventListener("scroll",onScroll,{passive:true});
+  if(window.matchMedia("(hover:hover)").matches){
+    window.addEventListener("mousemove",function(e){
+      var dx=(e.clientX/window.innerWidth-.5),dy=(e.clientY/window.innerHeight-.5);
+      if(bgp){bgp.style.marginLeft=(dx*14)+"px";bgp.style.marginTop=(dy*10)+"px";}
+    },{passive:true});
+  }
+  onScroll();
+})();
 
 })();
 </script>

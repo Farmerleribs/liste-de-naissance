@@ -111,18 +111,29 @@ async function scrape(u: string): Promise<{ image: string; title: string }> {
   return { image: img || "", title: title || "" };
 }
 
-async function notify(subject: string, lines: string[]): Promise<void> {
-  const key  = Deno.env.get("RESEND_API_KEY") || "";
-  const to   = Deno.env.get("NOTIFY_EMAIL") || "";
-  const from = Deno.env.get("NOTIFY_FROM") || "Liste de naissance <onboarding@resend.dev>";
-  if (!key || !to) return;
+// to : destinataire explicite (e-mail du propriétaire de la liste).
+// Si absent, repli sur la variable d'environnement NOTIFY_EMAIL (liste legacy).
+async function notify(subject: string, lines: string[], to?: string): Promise<void> {
+  const key     = Deno.env.get("RESEND_API_KEY") || "";
+  const fallback = Deno.env.get("NOTIFY_EMAIL") || "";
+  const dest    = to || fallback;
+  const from    = Deno.env.get("NOTIFY_FROM") || "Liste de naissance <onboarding@resend.dev>";
+  if (!key || !dest) return;
   try {
     await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "authorization": "Bearer " + key, "content-type": "application/json" },
-      body: JSON.stringify({ from, to: [to], subject, text: lines.filter(Boolean).join("\n") }),
+      body: JSON.stringify({ from, to: [dest], subject, text: lines.filter(Boolean).join("\n") }),
     });
   } catch { /* silencieux */ }
+}
+
+// Récupère l'e-mail du propriétaire d'une liste à partir de son user_id.
+// Pour la liste legacy (uid = null), retourne undefined → repli sur NOTIFY_EMAIL.
+async function ownerEmail(uid: string | null): Promise<string | undefined> {
+  if (!uid) return undefined;
+  const { data } = await supa.from("users").select("email").eq("id", uid).single();
+  return (data?.email as string) || undefined;
 }
 
 // Récupère le user_id depuis le JWT dans l'Authorization header
@@ -331,11 +342,11 @@ Deno.serve(async (req) => {
       const { data } = await q.select();
       if (!data || !data.length) return json({ error: "already reserved" }, 409);
       const gname = (data[0] && data[0].name) || "un cadeau";
-      await notify("Nouvelle réservation sur la liste", [
+      await notify("🎁 Cadeau réservé sur votre liste", [
         "Cadeau : " + gname,
         "Par : " + String(b.name),
         b.message ? "Message : " + String(b.message) : "",
-      ]);
+      ], await ownerEmail(uid));
       if (b.message) {
         await supa.from("contributions").insert({
           name: String(b.name).slice(0, 60), message: String(b.message).slice(0, 500),
@@ -377,12 +388,12 @@ Deno.serve(async (req) => {
           }
         } catch { /**/ }
       }
-      await notify("Nouvelle participation à la cagnotte", [
+      await notify("💌 Nouvelle participation à la cagnotte", [
         b.item ? "Pour : " + String(b.item) : "",
         "Par : " + (String(b.name || "") || "Anonyme"),
         b.amount ? "Montant : " + String(b.amount) : "",
-        atteint ? "Le montant total est atteint : le cadeau passe en réservé." : "",
-      ]);
+        atteint ? "✅ Le montant total est atteint : le cadeau passe en réservé." : "",
+      ], await ownerEmail(uid));
       return json({ ok: true, complete: atteint });
     }
 
@@ -394,10 +405,10 @@ Deno.serve(async (req) => {
         method: "", action: String(b.act || "mot").slice(0, 20), amount: "",
         user_id: uid,
       });
-      await notify("Nouveau mot dans le livre d'or", [
+      await notify("💬 Nouveau message sur votre liste", [
         "Par : " + (String(b.name || "") || "Anonyme"),
         b.message ? "Message : " + String(b.message) : "",
-      ]);
+      ], await ownerEmail(uid));
       return json({ ok: true });
     }
 
