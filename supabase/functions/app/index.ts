@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
       .order("pos", { ascending: true })
       .order("created_at", { ascending: true });
     const { data: cfg } = await supa.from("config")
-      .select("iban,beneficiary,term_date,message,wero,word_title,hero_sub,merci,cagnotte_url,notes,cat_order")
+      .select("iban,beneficiary,term_date,message,wero,word_title,hero_sub,merci,cagnotte_url,notes,cat_order,hero_pattern")
       .eq("id", 1).single();
     return json({ gifts: gifts || [], config: cfg || {} });
   }
@@ -362,6 +362,7 @@ Deno.serve(async (req) => {
         iban: b.iban, wero: b.wero, beneficiary: b.beneficiary, message: b.message,
         word_title: b.word_title, hero_sub: b.hero_sub, merci: b.merci, cagnotte_url: b.cagnotte_url,
       };
+      if (b.hero_pattern !== undefined) u.hero_pattern = String(b.hero_pattern).slice(0, 60);
       if (b.term_date) u.term_date = b.term_date;
       if (b.new_code) u.parent_code = String(b.new_code).slice(0, 40);
       if (b.notes && typeof b.notes === "object" && !Array.isArray(b.notes)) {

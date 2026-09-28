@@ -294,6 +294,17 @@ body{font-family:Karla,system-ui,sans-serif;color:var(--encre);background:var(--
 .mot .bloc.souffle,.mot .bloc:hover{animation:8s ease-in-out infinite morphDouxM}}
 @keyframes morphDouxM{0%,100%{border-radius:26% 28% 24% 30%/72px 66px 78px 70px}33%{border-radius:29% 25% 27% 27%/66px 76px 68px 78px}66%{border-radius:24% 30% 22% 32%/78px 64px 80px 66px}}
 @media(min-width:641px){.mot .bloc{padding-bottom:15%}}
+
+/* ===== SÉLECTEUR DE MOTIFS ===== */
+.bpgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin:14px 0}
+.bpcard{border-radius:12px;overflow:hidden;border:2px solid transparent;cursor:pointer;transition:border-color .2s,transform .2s}
+.bpcard:hover{transform:translateY(-2px)}
+.bpcard.sel{border-color:var(--miel);box-shadow:0 0 0 3px rgba(227,190,85,.3)}
+.bpcard svg{display:block;width:100%;height:80px}
+.bplabel{font-size:11px;font-weight:600;padding:6px 8px;background:#fff;color:var(--encre);text-align:center;border-top:1px solid #eee}
+.bpsub{font-size:10px;color:var(--encre-2);font-weight:400}
+.bpprev{width:100%;height:140px;border-radius:12px;overflow:hidden;margin-bottom:14px;border:1px solid var(--creme-2)}
+.bpprev svg{width:100%;height:100%;display:block}
 </style>
 </head>
 <body>
@@ -422,7 +433,8 @@ body{font-family:Karla,system-ui,sans-serif;color:var(--encre);background:var(--
       <h3>Ajouter un cadeau</h3>
       <p>Collez le lien du produit : la photo et le nom sont récupérés automatiquement.</p>
       <div class="bl"><button class="act" id="addBtn">Ajouter un cadeau</button>
-      <button class="act" id="cfgBtn">Réglages</button></div>
+      <button class="act" id="cfgBtn">Réglages</button>
+      <button class="act" id="bgBtn">Motif du fond</button></div>
     </div>
 
     <div class="zone">
@@ -1198,8 +1210,126 @@ $("#msgBtn").onclick=function(){
   }).catch(function(){});
 };
 
+/* ===== BANQUE DE MOTIFS ===== */
+var BG_MOTIFS=(function(){
+  // Chaque motif : {id, label, palette, svgBody(w,h) -> string SVG interne}
+  // w/h = dimensions du pattern
+  var P={
+    bleu:   {bg:"#B9CEDD", c1:"#F6F2E7", c2:"#E3BE55", c3:"#EDE8DA"},
+    creme:  {bg:"#F6F2E7", c1:"#B9CEDD", c2:"#E3BE55", c3:"#EDE8DA"},
+    rose:   {bg:"#F2C4CE", c1:"#FFF0F2", c2:"#E3BE55", c3:"#FAD4DC"},
+    sauge:  {bg:"#A8C5A0", c1:"#EFF5EE", c2:"#E3BE55", c3:"#D4E8D0"},
+    peche:  {bg:"#F4C5A0", c1:"#FFF3EB", c2:"#E3BE55", c3:"#FAD8C0"},
+    nuit:   {bg:"#2C3E50", c1:"#F6F2E7", c2:"#E3BE55", c3:"#EDE8DA"}
+  };
+  var formes={
+    galets:function(p){return '<rect width="130" height="130" fill="'+p.bg+'"/>'+
+      '<ellipse cx="36" cy="36" rx="32" ry="27" fill="'+p.c1+'"/><ellipse cx="32" cy="34" rx="12.5" ry="13" fill="'+p.c2+'"/>'+
+      '<ellipse cx="100" cy="96" rx="29" ry="25" fill="'+p.c1+'"/><ellipse cx="102" cy="94" rx="11.5" ry="11.5" fill="'+p.c2+'"/>';},
+    vagues:function(p){return '<rect width="320" height="120" fill="'+p.bg+'"/>'+
+      '<path d="M0 45 C55 20 105 70 160 45 C215 20 265 70 320 45 L320 65 C265 40 215 90 160 65 C105 40 55 90 0 65Z" fill="'+p.c1+'" opacity=".82"/>'+
+      '<path d="M0 80 C55 55 105 105 160 80 C215 55 265 105 320 80 L320 94 C265 69 215 119 160 94 C105 69 55 119 0 94Z" fill="'+p.c3+'" opacity=".55"/>'+
+      '<path d="M0 45 C55 20 105 70 160 45 C215 20 265 70 320 45" stroke="'+p.c2+'" stroke-width="3" fill="none" opacity=".5"/>';},
+    cercles:function(p){return '<rect width="180" height="180" fill="'+p.bg+'"/>'+
+      '<circle cx="50" cy="50" r="42" fill="none" stroke="'+p.c1+'" stroke-width="14" opacity=".6"/>'+
+      '<circle cx="50" cy="50" r="24" fill="none" stroke="'+p.c3+'" stroke-width="9" opacity=".5"/>'+
+      '<circle cx="50" cy="50" r="9" fill="'+p.c2+'" opacity=".8"/>'+
+      '<circle cx="140" cy="140" r="42" fill="none" stroke="'+p.c1+'" stroke-width="14" opacity=".6"/>'+
+      '<circle cx="140" cy="140" r="24" fill="none" stroke="'+p.c3+'" stroke-width="9" opacity=".5"/>'+
+      '<circle cx="140" cy="140" r="9" fill="'+p.c2+'" opacity=".8"/>';},
+    petales:function(p){return '<rect width="140" height="140" fill="'+p.bg+'"/>'+
+      '<ellipse cx="70" cy="70" rx="16" ry="34" fill="'+p.c1+'" opacity=".78"/>'+
+      '<ellipse cx="70" cy="70" rx="16" ry="34" fill="'+p.c1+'" opacity=".78" transform="rotate(60,70,70)"/>'+
+      '<ellipse cx="70" cy="70" rx="16" ry="34" fill="'+p.c1+'" opacity=".78" transform="rotate(120,70,70)"/>'+
+      '<circle cx="70" cy="70" r="11" fill="'+p.c2+'" opacity=".85"/>'+
+      '<circle cx="70" cy="70" r="5" fill="'+p.c1+'" opacity=".9"/>';},
+    coussins:function(p){return '<rect width="110" height="110" fill="'+p.bg+'"/>'+
+      '<path d="M55 12 C72 12 98 38 98 55 C98 72 72 98 55 98 C38 98 12 72 12 55 C12 38 38 12 55 12Z" fill="'+p.c1+'" opacity=".72"/>'+
+      '<path d="M55 32 C63 32 78 47 78 55 C78 63 63 78 55 78 C47 78 32 63 32 55 C32 47 47 32 55 32Z" fill="'+p.c2+'" opacity=".45"/>'+
+      '<circle cx="55" cy="55" r="7" fill="'+p.c3+'" opacity=".9"/>';},
+    etoiles:function(p){return '<rect width="140" height="140" fill="'+p.bg+'"/>'+
+      '<circle cx="28" cy="22" r="2.5" fill="'+p.c1+'" opacity=".8"/>'+
+      '<circle cx="70" cy="48" r="3.5" fill="'+p.c2+'" opacity=".9"/>'+
+      '<circle cx="112" cy="18" r="2" fill="'+p.c1+'" opacity=".7"/>'+
+      '<circle cx="42" cy="82" r="2" fill="'+p.c1+'" opacity=".65"/>'+
+      '<circle cx="98" cy="90" r="3" fill="'+p.c2+'" opacity=".75"/>'+
+      '<circle cx="18" cy="112" r="2.5" fill="'+p.c1+'" opacity=".6"/>'+
+      '<circle cx="122" cy="60" r="2" fill="'+p.c2+'" opacity=".6"/>'+
+      '<path d="M70 30 L72 24 L74 30 L80 30 L75 34 L77 40 L72 36 L67 40 L69 34 L64 30Z" fill="'+p.c2+'" opacity=".75"/>'+
+      '<path d="M28 70 L29.5 65 L31 70 L36 70 L32 73 L33.5 78 L29.5 75 L25.5 78 L27 73 L23 70Z" fill="'+p.c1+'" opacity=".55"/>';}
+  };
+  var dims={galets:[130,130],vagues:[320,120],cercles:[180,180],petales:[140,140],coussins:[110,110],etoiles:[140,140]};
+  var noms={galets:"Galets",vagues:"Vagues",cercles:"Cercles",petales:"Pétales",coussins:"Coussins",etoiles:"Étoiles"};
+  var pnoms={bleu:"Bleu",creme:"Crème",rose:"Rose",sauge:"Sauge",peche:"Pêche",nuit:"Nuit"};
+  var list=[];
+  Object.keys(formes).forEach(function(f){
+    Object.keys(P).forEach(function(c){
+      list.push({id:f+"-"+c,forme:f,couleur:c,label:noms[f],sub:pnoms[c]});
+    });
+  });
+  function svg(id,w,h){
+    var parts=id.split("-"),f=parts[0],c=parts[1];
+    if(!formes[f]||!P[c])return "";
+    var d=dims[f]||[130,130];
+    return '<svg viewBox="0 0 '+d[0]+' '+d[1]+'" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">'+formes[f](P[c])+'</svg>';
+  }
+  function apply(id){
+    var defs=document.getElementById("BPdyn");
+    if(!defs){
+      defs=document.createElementNS("http://www.w3.org/2000/svg","svg");
+      defs.setAttribute("width","0");defs.setAttribute("height","0");
+      defs.style.position="absolute";defs.id="BPdyn";
+      document.body.insertBefore(defs,document.body.firstChild);
+    }
+    var parts=id.split("-"),f=parts[0],c=parts[1];
+    if(!formes[f]||!P[c])return;
+    var d=dims[f]||[130,130];
+    defs.innerHTML='<defs><pattern id="BPx" width="'+d[0]+'" height="'+d[1]+'" patternUnits="userSpaceOnUse">'+formes[f](P[c])+'</pattern></defs>';
+    var bgp=document.getElementById("bgp");
+    if(bgp){bgp.innerHTML='<svg preserveAspectRatio="none"><rect width="100%" height="100%" fill="url(#BPx)"/></svg>';}
+  }
+  return {list:list,svg:svg,apply:apply};
+})();
+
+// Applique le motif sauvegardé au chargement
+function applyHeroPattern(id){
+  if(id&&id!=="galets-bleu")BG_MOTIFS.apply(id);
+}
+
+$("#bgBtn").onclick=function(){
+  var cur=CFG.hero_pattern||"galets-bleu";
+  function cards(sel){
+    return BG_MOTIFS.list.map(function(m){
+      return '<div class="bpcard'+(m.id===sel?" sel":"")+'" data-bp="'+m.id+'" title="'+m.label+" — "+m.sub+'">'+
+        BG_MOTIFS.svg(m.id)+'<div class="bplabel">'+m.label+' <span class="bpsub">'+m.sub+'</span></div></div>';
+    }).join("");
+  }
+  open('<div class="win d1 wide"><h3>Motif du fond</h3>'+
+    '<div class="bpprev" id="bpprev">'+BG_MOTIFS.svg(cur)+'</div>'+
+    '<div class="bpgrid" id="bpgrid">'+cards(cur)+'</div>'+
+    '<button class="btn p" id="bpok">Appliquer ce motif</button>'+
+    '<button class="btn o" data-close>Annuler</button>'+
+    '<div class="err" id="bperr"></div></div>',true);
+  var SEL=cur;
+  document.getElementById("bpgrid").addEventListener("click",function(e){
+    var c=e.target.closest("[data-bp]");if(!c)return;
+    SEL=c.getAttribute("data-bp");
+    [].forEach.call(this.querySelectorAll(".bpcard"),function(x){x.classList.toggle("sel",x.getAttribute("data-bp")===SEL);});
+    document.getElementById("bpprev").innerHTML=BG_MOTIFS.svg(SEL);
+  });
+  document.getElementById("bpok").onclick=function(){
+    this.disabled=true;this.textContent="Enregistrement…";
+    api("save_config",{code:CODE,hero_pattern:SEL,
+      iban:CFG.iban,wero:CFG.wero,beneficiary:CFG.beneficiary,message:CFG.message,
+      word_title:CFG.word_title,hero_sub:CFG.hero_sub,merci:CFG.merci,
+      cagnotte_url:CFG.cagnotte_url,term_date:CFG.term_date})
+    .then(function(){CFG.hero_pattern=SEL;BG_MOTIFS.apply(SEL);close();})
+    .catch(function(){document.getElementById("bperr").textContent="Enregistrement impossible.";});
+  };
+};
+
 para();
-load();
+load().then(function(){applyHeroPattern(CFG.hero_pattern);});
 })();
 </script>
 <script>document.addEventListener("click",function(e){var t=e.target&&e.target.closest?e.target.closest("#cfgTop"):null;if(t){var b=document.getElementById("cfgBtn");if(b)b.click();}});</script>
